@@ -5,7 +5,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { OpenRouterClient } from './openrouter.js';
 import { generatePrompt } from './prompts/generator.js';
-import { logAPICall, getAuditLogs, getAuditLog, clearAuditLogs, getAuditStats } from './auditLog.js';
+import promptRoutes from './routes/prompts.js';
+import auditRoutes from './routes/audit.js';
+import { getDatabase } from './db/init.js';
+import { Prompt } from './models/Prompt.js';
+import { AuditLog } from './models/AuditLog.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +23,10 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// 注册管理后台路由
+app.use('/api/admin', promptRoutes);
+app.use('/api/admin', auditRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -51,8 +59,23 @@ app.post('/api/generate-names', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     console.log('✅ SSE 连接已建立');
 
-    // 生成提示词
-    const prompt = generatePrompt(context);
+    // 从数据库获取激活的提示词
+    const db = getDatabase();
+    const activePrompt = Prompt.getActive(db, 'generation');
+    
+    let prompt;
+    let promptId = null;
+    
+    if (activePrompt) {
+      console.log('📝 使用数据库提示词:', activePrompt.name, 'v' + activePrompt.version);
+      // 替换提示词模板中的占位符
+      prompt = activePrompt.content.replace('{{#1761448296889.requirement#}}', context.trim());
+      promptId = activePrompt.id;
+    } else {
+      console.log('⚠️  数据库无激活提示词，使用文件提示词');
+      prompt = generatePrompt(context);
+    }
+    
     console.log('📄 提示词长度:', prompt.length, '字符');
 
     // 创建 OpenRouter 客户端
@@ -69,36 +92,66 @@ app.post('/api/generate-names', async (req, res) => {
 
     let chunkCount = 0;
     let totalLength = 0;
+    let usageInfo = null;
 
     // 流式输出
     for await (const chunk of client.generateNames(prompt)) {
-      chunkCount++;
-      totalLength += chunk.length;
-      fullOutput += chunk; // 累积完整输出
-      
-      // 每50个chunk显示一次进度
-      if (chunkCount % 50 === 0) {
-        console.log(`📦 已接收 ${chunkCount} 个数据块，共 ${totalLength} 字符`);
+      // chunk 现在是 {content, usage} 格式
+      if (chunk.content) {
+        chunkCount++;
+        totalLength += chunk.content.length;
+        fullOutput += chunk.content; // 累积完整输出
+        
+        // 每50个chunk显示一次进度
+        if (chunkCount % 50 === 0) {
+          console.log(`📦 已接收 ${chunkCount} 个数据块，共 ${totalLength} 字符`);
+        }
+        
+        res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
       }
       
-      res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+      // 捕获 usage 信息
+      if (chunk.usage) {
+        usageInfo = chunk.usage;
+        console.log('💰 Token 使用情况:', usageInfo);
+      }
     }
 
     console.log('\n✅ 流式输出完成！');
     console.log('📊 统计: 共接收', chunkCount, '个数据块，', totalLength, '字符');
     
-    // 记录审计日志
+    // 计算费用（如果有 usage 信息）
+    let costUsd = null;
+    if (usageInfo) {
+      // OpenRouter 的计费模型（需要根据实际模型调整）
+      // 这里使用近似值，实际应该从 OpenRouter 获取或维护价格表
+      const promptCostPer1k = 0.003;  // $0.003 per 1K prompt tokens
+      const completionCostPer1k = 0.015; // $0.015 per 1K completion tokens
+      
+      costUsd = (
+        (usageInfo.prompt_tokens / 1000) * promptCostPer1k +
+        (usageInfo.completion_tokens / 1000) * completionCostPer1k
+      );
+      
+      console.log('💵 预估费用: $' + costUsd.toFixed(6));
+    }
+    
+    // 记录审计日志到数据库
     const duration = Date.now() - startTime;
-    logAPICall({
+    const logId = AuditLog.create(db, {
       model: model || 'anthropic/claude-3.5-sonnet',
+      promptId: promptId,
       userInput: context,
-      systemPrompt: prompt, // 完整的系统提示词
+      systemPrompt: prompt,
       rawOutput: fullOutput,
-      tokensUsed: null, // OpenRouter 不总是返回token数
-      duration: duration,
+      tokensPrompt: usageInfo?.prompt_tokens || null,
+      tokensCompletion: usageInfo?.completion_tokens || null,
+      tokensTotal: usageInfo?.total_tokens || null,
+      costUsd: costUsd,
+      durationMs: duration,
       success: true,
     });
-    console.log('📝 审计日志已记录');
+    console.log('📝 审计日志已记录到数据库, ID:', logId);
 
     // 发送完成信号
     res.write('data: [DONE]\n\n');
@@ -113,14 +166,16 @@ app.post('/api/generate-names', async (req, res) => {
     console.error('完整堆栈:', error.stack);
     console.error('===== 错误结束 =====\n');
     
-    // 记录失败的审计日志
+    // 记录失败的审计日志到数据库
     const duration = Date.now() - startTime;
-    logAPICall({
+    const db = getDatabase();
+    AuditLog.create(db, {
       model: model || 'anthropic/claude-3.5-sonnet',
+      promptId: null,
       userInput: context,
-      systemPrompt: generatePrompt(context), // 完整的系统提示词
+      systemPrompt: prompt || generatePrompt(context),
       rawOutput: fullOutput,
-      duration: duration,
+      durationMs: duration,
       success: false,
       error: error.message,
     });
@@ -130,35 +185,13 @@ app.post('/api/generate-names', async (req, res) => {
   }
 });
 
-// 审计日志相关端点
-app.get('/api/audit/logs', (req, res) => {
-  const limit = parseInt(req.query.limit) || 50;
-  const logs = getAuditLogs(limit);
-  res.json({ logs });
-});
-
-app.get('/api/audit/logs/:id', (req, res) => {
-  const log = getAuditLog(req.params.id);
-  if (!log) {
-    return res.status(404).json({ error: 'Log not found' });
-  }
-  res.json({ log });
-});
-
-app.get('/api/audit/stats', (req, res) => {
-  const stats = getAuditStats();
-  res.json({ stats });
-});
-
-app.delete('/api/audit/logs', (req, res) => {
-  const count = clearAuditLogs();
-  res.json({ message: 'Logs cleared', count });
-});
-
 // Start server (only if not in test environment)
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server is running on:`);
+    console.log(`   本地: http://localhost:${PORT}`);
+    console.log(`   局域网: http://0.0.0.0:${PORT}`);
+    console.log(`📊 管理后台: /platform`);
   });
 }
 

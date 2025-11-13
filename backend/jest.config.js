@@ -4,6 +4,8 @@ export default {
   collectCoverageFrom: [
     '*.js',
     'prompts/*.js',
+    'models/*.js',
+    'controllers/*.js',
     '!jest.config.js',
     '!coverage/**'
   ],
@@ -12,5 +14,6 @@ export default {
   ],
   verbose: true,
   transform: {},
+  maxWorkers: 1, // 串行运行测试，避免数据库冲突
 };
 
