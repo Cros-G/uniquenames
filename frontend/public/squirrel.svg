@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- 松鼠图标 - 可爱温暖风格 -->
+  
+  <!-- 尾巴（背景层） -->
+  <path d="M 50 15 Q 55 5, 60 8 Q 58 15, 55 20 Q 52 25, 48 22 Z" 
+        fill="#EC4899" opacity="0.8"/>
+  
+  <!-- 身体 -->
+  <ellipse cx="32" cy="38" rx="16" ry="18" fill="#8B5CF6"/>
+  
+  <!-- 头部 -->
+  <circle cx="32" cy="22" r="12" fill="#A78BFA"/>
+  
+  <!-- 耳朵 -->
+  <ellipse cx="26" cy="14" rx="4" ry="7" fill="#A78BFA"/>
+  <ellipse cx="38" cy="14" rx="4" ry="7" fill="#A78BFA"/>
+  
+  <!-- 眼睛 -->
+  <circle cx="28" cy="22" r="2.5" fill="#1F2937"/>
+  <circle cx="36" cy="22" r="2.5" fill="#1F2937"/>
+  <circle cx="28.5" cy="21" r="1" fill="white"/>
+  <circle cx="36.5" cy="21" r="1" fill="white"/>
+  
+  <!-- 鼻子 -->
+  <circle cx="32" cy="26" r="1.5" fill="#1F2937"/>
+  
+  <!-- 嘴巴（微笑） -->
+  <path d="M 29 28 Q 32 30, 35 28" 
+        stroke="#1F2937" stroke-width="1" fill="none" stroke-linecap="round"/>
+  
+  <!-- 前爪 -->
+  <ellipse cx="24" cy="44" rx="4" ry="6" fill="#C4B5FD"/>
+  <ellipse cx="40" cy="44" rx="4" ry="6" fill="#C4B5FD"/>
+  
+  <!-- 坚果（松鼠抱着坚果） -->
+  <ellipse cx="32" cy="42" rx="5" ry="6" fill="#F59E0B"/>
+  <path d="M 30 40 Q 32 38, 34 40" stroke="#D97706" stroke-width="1" fill="none"/>
+  
+  <!-- 尾巴装饰线条 -->
+  <path d="M 48 20 Q 50 18, 52 16" 
+        stroke="#F472B6" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+</svg>
+
