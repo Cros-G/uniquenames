@@ -79,8 +79,13 @@ export function NarrowDownPage() {
     await streamNarrowDown(input, selectedModel, {
       onTracking: (data) => {
         console.log('✅ 提取到名字:', data.names);
-        setNames(data.names);
-        setPhase('analyzing');
+        if (data.names) {
+          setNames(data.names);
+          setPhase('analyzing');
+        } else if (data.step === 'tracking') {
+          // 仅进度更新，保持 tracking 状态
+          setPhase('tracking');
+        }
       },
       
       onTrackingError: (data) => {
@@ -105,7 +110,12 @@ export function NarrowDownPage() {
       
       onInformationProgress: (data) => {
         console.log(`📊 分析进度: ${data.name} - ${data.dimension}`);
-        updateCardDimension(data.numbering, data.dimension);
+        if (data.step === 'researching') {
+          setPhase('researching');
+        }
+        if (data.numbering && data.name && data.dimension) {
+          updateCardDimension(data.numbering, data.dimension);
+        }
       },
       
       onInformationComplete: (data) => {
@@ -115,6 +125,9 @@ export function NarrowDownPage() {
       
       onDecideComplete: (data) => {
         console.log('✅ 排名决策完成');
+        if (data.step === 'deciding') {
+          setPhase('deciding');
+        }
         setRankingList(data.rankingList);
         setStrongOpinion(data.strongOpinion);
         setPhase('crafting');
@@ -122,6 +135,9 @@ export function NarrowDownPage() {
       
       onStoryProgress: (data) => {
         console.log(`📝 生成故事: ${data.name}`);
+        if (data.step === 'crafting') {
+          setPhase('crafting');
+        }
       },
       
       onStoryComplete: (data) => {
