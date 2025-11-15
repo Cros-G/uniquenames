@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useNarrowDownStore } from '../store/useNarrowDownStore';
@@ -6,6 +7,9 @@ import { getSelectedModel } from '../components/SettingsPanel';
 import { NarrowDownInput } from '../components/narrow/NarrowDownInput';
 import { NarrowDownStatus } from '../components/narrow/NarrowDownStatus';
 import { CardStack } from '../components/narrow/CardStack';
+import { LoginPrompt } from '../components/auth/LoginPrompt';
+import { useAuth } from '../contexts/AuthContext';
+import { checkUsageLimit, incrementUsage } from '../utils/usageLimit';
 
 /**
  * Narrow Down 主页面
@@ -13,6 +17,8 @@ import { CardStack } from '../components/narrow/CardStack';
  */
 export function NarrowDownPage() {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   
   const {
     phase,
@@ -45,8 +51,24 @@ export function NarrowDownPage() {
     reset,
   } = useNarrowDownStore();
 
-  const handleSubmit = (input: string) => {
+  const handleSubmit = async (input: string) => {
     console.log('🎯 [NarrowDownPage] 提交请求');
+    
+    // 检查登录状态和使用限制
+    if (!user) {
+      console.log('👻 [NarrowDownPage] 匿名用户，检查使用限制...');
+      
+      if (!checkUsageLimit('narrow_down')) {
+        console.log('⚠️ [NarrowDownPage] 超过使用限制，显示登录提示');
+        setShowLoginPrompt(true);
+        return;
+      }
+      
+      console.log('✅ [NarrowDownPage] 未超限，增加计数');
+      incrementUsage('narrow_down');
+    } else {
+      console.log('👤 [NarrowDownPage] 已登录用户，无限制');
+    }
     
     reset();
     setUserInput(input);
@@ -54,7 +76,7 @@ export function NarrowDownPage() {
     
     const selectedModel = getSelectedModel();
 
-    streamNarrowDown(input, selectedModel, {
+    await streamNarrowDown(input, selectedModel, {
       onTracking: (data) => {
         console.log('✅ 提取到名字:', data.names);
         setNames(data.names);
@@ -140,17 +162,39 @@ export function NarrowDownPage() {
             Narrow Down
           </h1>
           
-          <button
-            onClick={() => navigate('/app/records')}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 
-                       border border-gray-200 hover:border-gray-300 rounded-lg transition-all"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <span className="font-medium">Records</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <button
+                  onClick={() => navigate('/app/records')}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 
+                             border border-gray-200 hover:border-gray-300 rounded-lg transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <span className="font-medium">Records</span>
+                </button>
+                <span className="text-sm text-gray-600">{user.email || 'User'}</span>
+                <button
+                  onClick={() => signOut()}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => navigate('/login')}
+                className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600
+                           hover:from-pink-600 hover:to-purple-700
+                           text-white rounded-lg font-medium transition-all duration-200"
+              >
+                Login
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -226,6 +270,13 @@ export function NarrowDownPage() {
           </div>
         </div>
       </div>
+
+      {/* Login Prompt Modal */}
+      <LoginPrompt
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        type="narrow_down"
+      />
     </div>
   );
 }

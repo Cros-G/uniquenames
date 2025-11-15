@@ -5,8 +5,10 @@
 import { Prompt } from '../models/Prompt.js';
 import { Settings } from '../models/Settings.js';
 import { AuditLog } from '../models/AuditLog.js';
+import { SupabaseAuditLog } from '../models/SupabaseAuditLog.js';
 import { replacePromptVariables, parallelAPICall } from '../utils/promptUtils.js';
 import { OpenRouterClient } from '../openrouter.js';
+import { calculateCost } from '../utils/costCalculator.js';
 
 export class NarrowDownOrchestrator {
   constructor(db, openrouterClient, userInput, model, userId = null) {
@@ -14,7 +16,11 @@ export class NarrowDownOrchestrator {
     this.client = openrouterClient;
     this.userInput = userInput;
     this.model = model;
-    this.userId = userId; // 新增：用户 ID
+    this.userId = userId;
+    
+    // 生成 session_id（关联该次活动的所有步骤）
+    this.sessionId = `narrow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log('🔖 [NarrowDown] Session ID:', this.sessionId);
     
     // 流程数据
     this.names = [];
@@ -23,6 +29,28 @@ export class NarrowDownOrchestrator {
     this.evaluations = [];
     this.rankingList = [];
     this.stories = [];
+  }
+
+  /**
+   * 双写审计日志（SQLite + Supabase）
+   * 遵循 good_habits.md: 错误处理完善，不影响主流程
+   */
+  async logAudit(data) {
+    // 自动添加 session_id
+    const auditData = {
+      ...data,
+      sessionId: this.sessionId,
+    };
+    
+    // 1. 写入本地 SQLite（主要存储）
+    const logId = AuditLog.create(this.db, auditData);
+    
+    // 2. 写入 Supabase（如果已登录）
+    if (this.userId && !this.userId.startsWith('anon_')) {
+      await SupabaseAuditLog.create(auditData);
+    }
+    
+    return logId;
   }
 
   /**
@@ -145,8 +173,13 @@ export class NarrowDownOrchestrator {
       .map(n => n.trim())
       .filter(n => n.length > 0);
     
-    // 记录审计日志
-    AuditLog.create(this.db, {
+    // 计算费用
+    console.log('🔍 [list_names] Usage 对象:', JSON.stringify(usage));
+    const costUsd = calculateCost(usage, promptModel);
+    console.log('💰 [list_names] Token:', usage?.total_tokens || 0, ', 费用:', costUsd !== null ? `$${costUsd.toFixed(6)}` : 'N/A');
+    
+    // 记录审计日志（双写）
+    await this.logAudit({
       model: promptModel,
       promptId: promptTemplate.id,
       userId: this.userId,
@@ -156,7 +189,7 @@ export class NarrowDownOrchestrator {
       tokensPrompt: usage?.prompt_tokens || null,
       tokensCompletion: usage?.completion_tokens || null,
       tokensTotal: usage?.total_tokens || null,
-      costUsd: null, // OpenRouter 不直接返回费用，需要根据模型计算
+      costUsd: costUsd,
       durationMs: Date.now() - startTime,
       success: true,
       workflowType: 'narrow_down',
@@ -203,8 +236,12 @@ export class NarrowDownOrchestrator {
     this.contextAnalysis = result.context_analysis;
     this.nameCandidates = result.name_candidates;
     
-    // 记录审计日志
-    AuditLog.create(this.db, {
+    // 计算费用
+    const costUsd = calculateCost(usage, promptModel);
+    console.log('💰 [isolate] Token:', usage?.total_tokens || 0, ', 费用:', costUsd !== null ? `$${costUsd.toFixed(6)}` : 'N/A');
+    
+    // 记录审计日志（双写）
+    await this.logAudit({
       model: promptModel,
       promptId: isolatePrompt.id,
       userId: this.userId,
@@ -214,7 +251,7 @@ export class NarrowDownOrchestrator {
       tokensPrompt: usage?.prompt_tokens || null,
       tokensCompletion: usage?.completion_tokens || null,
       tokensTotal: usage?.total_tokens || null,
-      costUsd: null,
+      costUsd: costUsd,
       durationMs: Date.now() - startTime,
       success: true,
       workflowType: 'narrow_down',
@@ -273,8 +310,12 @@ export class NarrowDownOrchestrator {
         const { response, usage } = await this.callAPI(prompt, promptModel);
         const result = this.extractJSON(response);
         
-        // 记录审计日志
-        AuditLog.create(this.db, {
+        // 计算费用
+        const costUsd = calculateCost(usage, promptModel);
+        console.log(`💰 [information-${candidate.name}] Token:`, usage?.total_tokens || 0, ', 费用:', costUsd !== null ? `$${costUsd.toFixed(6)}` : 'N/A');
+        
+        // 记录审计日志（双写）
+        await this.logAudit({
           model: promptModel,
           promptId: infoPrompt.id,
           userId: this.userId,
@@ -284,7 +325,7 @@ export class NarrowDownOrchestrator {
           tokensPrompt: usage?.prompt_tokens || null,
           tokensCompletion: usage?.completion_tokens || null,
           tokensTotal: usage?.total_tokens || null,
-          costUsd: null,
+          costUsd: costUsd,
           durationMs: Date.now() - startTime,
           success: true,
           workflowType: 'narrow_down',
@@ -344,8 +385,12 @@ export class NarrowDownOrchestrator {
     this.rankingList = result.ranking_list;
     this.strongOpinion = result.strong_opinion;
     
-    // 记录审计日志
-    AuditLog.create(this.db, {
+    // 计算费用
+    const costUsd = calculateCost(usage, promptModel);
+    console.log('💰 [decide] Token:', usage?.total_tokens || 0, ', 费用:', costUsd !== null ? `$${costUsd.toFixed(6)}` : 'N/A');
+    
+    // 记录审计日志（双写）
+    await this.logAudit({
       model: promptModel,
       promptId: decidePrompt.id,
       userId: this.userId,
@@ -355,7 +400,7 @@ export class NarrowDownOrchestrator {
       tokensPrompt: usage?.prompt_tokens || null,
       tokensCompletion: usage?.completion_tokens || null,
       tokensTotal: usage?.total_tokens || null,
-      costUsd: null,
+      costUsd: costUsd,
       durationMs: Date.now() - startTime,
       success: true,
       workflowType: 'narrow_down',
@@ -417,8 +462,12 @@ export class NarrowDownOrchestrator {
         const { response, usage } = await this.callAPI(prompt, promptModel);
         const result = this.extractJSON(response);
         
-        // 记录审计日志
-        AuditLog.create(this.db, {
+        // 计算费用
+        const costUsd = calculateCost(usage, promptModel);
+        console.log(`💰 [story-${candidate.name}] Token:`, usage?.total_tokens || 0, ', 费用:', costUsd !== null ? `$${costUsd.toFixed(6)}` : 'N/A');
+        
+        // 记录审计日志（双写）
+        await this.logAudit({
           model: promptModel,
           promptId: storyPrompt.id,
           userId: this.userId,
@@ -428,7 +477,7 @@ export class NarrowDownOrchestrator {
           tokensPrompt: usage?.prompt_tokens || null,
           tokensCompletion: usage?.completion_tokens || null,
           tokensTotal: usage?.total_tokens || null,
-          costUsd: null,
+          costUsd: costUsd,
           durationMs: Date.now() - startTime,
           success: true,
           workflowType: 'narrow_down',

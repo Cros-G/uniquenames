@@ -13,7 +13,9 @@ import userRoutes from './routes/user.js';
 import { getDatabase } from './db/init.js';
 import { Prompt } from './models/Prompt.js';
 import { AuditLog } from './models/AuditLog.js';
+import { SupabaseAuditLog } from './models/SupabaseAuditLog.js';
 import { replacePromptVariables } from './utils/promptUtils.js';
+import { calculateCost } from './utils/costCalculator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,8 +50,12 @@ app.get('/api/health', (req, res) => {
 app.post('/api/generate-names', async (req, res) => {
   const { context, model } = req.body;
   const userId = req.headers['x-user-id'] || 'anonymous';
+  
+  // 生成 session_id（关联该次活动的所有记录）
+  const sessionId = `gen_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   console.log('\n🎯 ===== 收到新的起名请求 =====');
+  console.log('🔖 Session ID:', sessionId);
   console.log('👤 用户 ID:', userId);
   console.log('📝 用户输入:', context);
   console.log('🤖 使用模型:', model || 'anthropic/claude-3.5-sonnet (默认)');
@@ -143,28 +149,18 @@ app.post('/api/generate-names', async (req, res) => {
     console.log('\n✅ 流式输出完成！');
     console.log('📊 统计: 共接收', chunkCount, '个数据块，', totalLength, '字符');
     
-    // 计算费用（如果有 usage 信息）
-    let costUsd = null;
-    if (usageInfo) {
-      // OpenRouter 的计费模型（需要根据实际模型调整）
-      // 这里使用近似值，实际应该从 OpenRouter 获取或维护价格表
-      const promptCostPer1k = 0.003;  // $0.003 per 1K prompt tokens
-      const completionCostPer1k = 0.015; // $0.015 per 1K completion tokens
-      
-      costUsd = (
-        (usageInfo.prompt_tokens / 1000) * promptCostPer1k +
-        (usageInfo.completion_tokens / 1000) * completionCostPer1k
-      );
-      
+    // 计算费用（使用统一的费用计算工具）
+    const costUsd = calculateCost(usageInfo, actualModel);
+    if (costUsd !== null) {
       console.log('💵 预估费用: $' + costUsd.toFixed(6));
     }
     
-    // 记录审计日志到数据库
+    // 记录审计日志到数据库（双写：SQLite + Supabase）
     const duration = Date.now() - startTime;
-    const logId = AuditLog.create(db, {
-      model: actualModel, // 记录实际使用的模型
+    const auditData = {
+      model: actualModel,
       promptId: promptId,
-      userId: userId, // 记录用户 ID
+      userId: userId,
       userInput: context,
       systemPrompt: prompt,
       rawOutput: fullOutput,
@@ -175,8 +171,26 @@ app.post('/api/generate-names', async (req, res) => {
       durationMs: duration,
       success: true,
       workflowType: 'generation',
-    });
-    console.log('📝 审计日志已记录到数据库, ID:', logId);
+      sessionId: sessionId,
+    };
+
+    // 1. 写入本地 SQLite
+    const logId = AuditLog.create(db, auditData);
+    console.log('📝 [SQLite] 审计日志已记录, ID:', logId);
+
+    // 2. 写入 Supabase（如果已登录且配置了 Supabase）
+    console.log('🔍 [双写检查] userId:', userId, ', 是否匿名:', userId?.startsWith('anon_'));
+    if (userId && !userId.startsWith('anon_')) {
+      console.log('☁️ [Supabase] 开始同步...');
+      const supabaseId = await SupabaseAuditLog.create(auditData);
+      if (supabaseId) {
+        console.log('✅ [Supabase] 审计日志已同步, ID:', supabaseId);
+      } else {
+        console.log('⚠️ [Supabase] 同步失败（返回 null）');
+      }
+    } else {
+      console.log('⏭️ [Supabase] 跳过同步（匿名用户或无 userId）');
+    }
 
     // 发送完成信号
     res.write('data: [DONE]\n\n');
@@ -191,13 +205,13 @@ app.post('/api/generate-names', async (req, res) => {
     console.error('完整堆栈:', error.stack);
     console.error('===== 错误结束 =====\n');
     
-    // 记录失败的审计日志到数据库
+    // 记录失败的审计日志到数据库（双写）
     const duration = Date.now() - startTime;
     const db = getDatabase();
-    AuditLog.create(db, {
+    const auditData = {
       model: model || 'anthropic/claude-3.5-sonnet',
       promptId: null,
-      userId: userId, // 记录用户 ID
+      userId: userId,
       userInput: context,
       systemPrompt: prompt || generatePrompt(context),
       rawOutput: fullOutput,
@@ -205,7 +219,16 @@ app.post('/api/generate-names', async (req, res) => {
       success: false,
       error: error.message,
       workflowType: 'generation',
-    });
+      sessionId: sessionId,
+    };
+
+    // 1. 写入 SQLite
+    AuditLog.create(db, auditData);
+
+    // 2. 写入 Supabase
+    if (userId && !userId.startsWith('anon_')) {
+      await SupabaseAuditLog.create(auditData);
+    }
     
     res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
     res.end();

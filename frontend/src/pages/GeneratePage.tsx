@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useNamingStore } from '../store/useNamingStore';
 import { streamGenerateNames } from '../services/streamingAPI';
@@ -6,6 +6,9 @@ import { getSelectedModel } from '../components/SettingsPanel';
 import { GenerateInput } from '../components/generate/GenerateInput';
 import { GenerateStatus } from '../components/generate/GenerateStatus';
 import { OutputPanel } from '../components/OutputPanel';
+import { LoginPrompt } from '../components/auth/LoginPrompt';
+import { useAuth } from '../contexts/AuthContext';
+import { checkUsageLimit, incrementUsage } from '../utils/usageLimit';
 import { motion } from 'framer-motion';
 
 /**
@@ -15,6 +18,8 @@ import { motion } from 'framer-motion';
 export function GeneratePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user, signOut } = useAuth();
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   
   const {
     phase,
@@ -38,9 +43,25 @@ export function GeneratePage() {
   // Read initial context from URL parameters
   const initialContext = searchParams.get('context') || '';
 
-  const handleSubmit = (context: string) => {
+  const handleSubmit = async (context: string) => {
     console.log('🎯 [GeneratePage] User submitted');
     console.log('📝 [GeneratePage] User input:', context);
+    
+    // 检查登录状态和使用限制
+    if (!user) {
+      console.log('👻 [GeneratePage] 匿名用户，检查使用限制...');
+      
+      if (!checkUsageLimit('generation')) {
+        console.log('⚠️ [GeneratePage] 超过使用限制，显示登录提示');
+        setShowLoginPrompt(true);
+        return;
+      }
+      
+      console.log('✅ [GeneratePage] 未超限，增加计数');
+      incrementUsage('generation');
+    } else {
+      console.log('👤 [GeneratePage] 已登录用户，无限制');
+    }
     
     const selectedModel = getSelectedModel();
     console.log('🤖 [GeneratePage] Using model:', selectedModel);
@@ -50,7 +71,7 @@ export function GeneratePage() {
     
     console.log('🚀 [GeneratePage] Starting streamGenerateNames...');
 
-    streamGenerateNames(context, selectedModel, {
+    await streamGenerateNames(context, selectedModel, {
       onAnalysis: (text) => {
         setAnalysis(text);
       },
@@ -102,17 +123,39 @@ export function GeneratePage() {
             Generate Names
           </h1>
           
-          <button
-            onClick={() => navigate('/app/records')}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 
-                       border border-gray-200 hover:border-gray-300 rounded-lg transition-all"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <span className="font-medium">Records</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <button
+                  onClick={() => navigate('/app/records')}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 
+                             border border-gray-200 hover:border-gray-300 rounded-lg transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <span className="font-medium">Records</span>
+                </button>
+                <span className="text-sm text-gray-600">{user.email || 'User'}</span>
+                <button
+                  onClick={() => signOut()}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => navigate('/login')}
+                className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600
+                           hover:from-pink-600 hover:to-purple-700
+                           text-white rounded-lg font-medium transition-all duration-200"
+              >
+                Login
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -178,6 +221,13 @@ export function GeneratePage() {
           </div>
         </div>
       </div>
+
+      {/* Login Prompt Modal */}
+      <LoginPrompt
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        type="generation"
+      />
     </div>
   );
 }

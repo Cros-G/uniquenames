@@ -43,11 +43,11 @@ function parseAIResponse(fullContent: string): {
  * 流式生成名字
  * 使用 Server-Sent Events (SSE) 接收流式数据
  */
-export function streamGenerateNames(
+export async function streamGenerateNames(
   context: string,
   model: string,
   callbacks: StreamCallbacks
-): () => void {
+): Promise<() => void> {
   console.log('📡 [StreamAPI] streamGenerateNames 被调用');
   console.log('📝 [StreamAPI] context:', context);
   console.log('🤖 [StreamAPI] model:', model);
@@ -60,10 +60,11 @@ export function streamGenerateNames(
 
   console.log('🌐 [StreamAPI] 准备发送 POST 请求到 /api/generate-names');
 
-  const userId = getUserId();
+  // 获取用户 ID（异步）
+  const userId = await getUserId();
   console.log('👤 [StreamAPI] User ID:', userId);
-
-  // 创建 POST 请求
+  
+  // 创建 POST 请求（使用相对路径，开发环境通过 Vite proxy，生产环境通过 Nginx）
   fetch('/api/generate-names', {
     method: 'POST',
     headers: {
@@ -176,7 +177,7 @@ export function streamGenerateNames(
       console.error('❌ [StreamAPI] 错误详情:', error.message);
       callbacks.onError?.(error);
     });
-
+  
   // 返回取消函数（虽然 fetch 不太好取消，但提供接口）
   return () => {
     // TODO: 实现真正的取消逻辑（可能需要 AbortController）

@@ -12,8 +12,8 @@ export const AuditLog = {
         model, prompt_id, user_id, user_input, system_prompt, raw_output,
         tokens_prompt, tokens_completion, tokens_total, cost_usd,
         duration_ms, success, error,
-        workflow_type, step_name, names_count
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        workflow_type, step_name, names_count, session_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
@@ -32,7 +32,8 @@ export const AuditLog = {
       data.error || null,
       data.workflowType || 'generation',
       data.stepName || null,
-      data.namesCount || null
+      data.namesCount || null,
+      data.sessionId || null
     );
 
     return result.lastInsertRowid;

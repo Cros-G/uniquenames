@@ -1,4 +1,5 @@
 import { User } from '../models/User.js';
+import { SupabaseAuditLog } from '../models/SupabaseAuditLog.js';
 import { getDatabase } from '../db/init.js';
 
 /**
@@ -155,6 +156,78 @@ function groupActivitiesByWorkflow(rawActivities) {
   });
   
   return Array.from(grouped.values());
+}
+
+/**
+ * POST /api/user/migrate
+ * 迁移匿名用户的历史记录
+ */
+export async function migrateAnonymousHistory(req, res) {
+  try {
+    const { anonymousUserId, supabaseUserId } = req.body;
+    
+    if (!anonymousUserId || !supabaseUserId) {
+      return res.status(400).json({ error: '缺少必要参数' });
+    }
+    
+    console.log('🔄 [Migration] 开始迁移历史...');
+    console.log('👻 [Migration] 匿名 ID:', anonymousUserId);
+    console.log('👤 [Migration] Supabase ID:', supabaseUserId);
+    
+    const db = getDatabase();
+    
+    // 1. 查询匿名用户的所有记录
+    const anonymousRecords = db.prepare(`
+      SELECT * FROM audit_logs WHERE user_id = ?
+    `).all(anonymousUserId);
+    
+    console.log('📊 [Migration] 找到', anonymousRecords.length, '条匿名记录');
+    
+    if (anonymousRecords.length === 0) {
+      return res.json({ migrated: 0, message: '无需迁移' });
+    }
+    
+    // 2. 更新 SQLite 中的 user_id
+    const updateStmt = db.prepare(`
+      UPDATE audit_logs SET user_id = ? WHERE user_id = ?
+    `);
+    
+    const updateResult = updateStmt.run(supabaseUserId, anonymousUserId);
+    console.log('✅ [Migration] SQLite 更新成功:', updateResult.changes, '条记录');
+    
+    // 3. 批量写入 Supabase
+    const supabaseRecords = anonymousRecords.map(record => ({
+      timestamp: record.timestamp,
+      model: record.model,
+      prompt_id: record.prompt_id,
+      user_id: supabaseUserId, // 使用新的 Supabase user_id
+      user_input: record.user_input,
+      system_prompt: record.system_prompt,
+      raw_output: record.raw_output,
+      tokens_prompt: record.tokens_prompt,
+      tokens_completion: record.tokens_completion,
+      tokens_total: record.tokens_total,
+      cost_usd: record.cost_usd,
+      duration_ms: record.duration_ms,
+      success: record.success,
+      error: record.error,
+      workflow_type: record.workflow_type,
+      step_name: record.step_name,
+      names_count: record.names_count,
+    }));
+    
+    const supabaseCount = await SupabaseAuditLog.batchInsert(supabaseRecords);
+    console.log('☁️ [Migration] Supabase 同步成功:', supabaseCount, '条记录');
+    
+    res.json({
+      migrated: updateResult.changes,
+      synced: supabaseCount,
+      message: `成功迁移 ${updateResult.changes} 条记录`,
+    });
+  } catch (error) {
+    console.error('❌ [Migration] 迁移失败:', error);
+    res.status(500).json({ error: '迁移失败', details: error.message });
+  }
 }
 
 /**

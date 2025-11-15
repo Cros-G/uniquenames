@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
 
 /**
  * Landing Page - Development version
@@ -8,6 +9,7 @@ import { motion } from 'framer-motion';
  */
 export function LandingPage() {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'generate' | 'narrowdown'>('generate');
   const [input, setInput] = useState('');
 
@@ -28,18 +30,48 @@ export function LandingPage() {
           <div className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
             uniquenames.net
           </div>
-          <div className="flex gap-4">
-            <button
-              onClick={() => navigate('/app/records')}
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors
-                         flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <span>Records</span>
-            </button>
+          <div className="flex gap-4 items-center">
+            {user ? (
+              <>
+                {/* 已登录：显示用户菜单 */}
+                <button
+                  onClick={() => navigate('/app/records')}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors
+                             flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <span>Records</span>
+                </button>
+                
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">
+                    {user.email || 'User'}
+                  </span>
+                  <button
+                    onClick={() => signOut()}
+                    className="px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* 未登录：显示登录按钮 */}
+                <button
+                  onClick={() => navigate('/login')}
+                  className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600
+                             hover:from-pink-600 hover:to-purple-700
+                             text-white rounded-lg font-medium transition-all duration-200"
+                >
+                  Login
+                </button>
+              </>
+            )}
+            
             <button
               onClick={() => navigate('/platform')}
               className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"

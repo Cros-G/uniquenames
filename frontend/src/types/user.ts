@@ -4,6 +4,7 @@
 
 export interface Activity {
   id: number;
+  sessionId: string;
   type: 'generation' | 'narrow_down';
   timestamp: string;
   userInput: string;

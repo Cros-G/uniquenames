@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
+import { LoginPage } from './pages/LoginPage';
+import { AuthCallback } from './pages/AuthCallback';
 import { GeneratePage } from './pages/GeneratePage';
 import { NarrowDownPage } from './pages/NarrowDownPage';
 import { RecordsPage } from './pages/RecordsPage';
@@ -15,10 +17,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing Page - 开发环境使用 React 版本 */}
+        {/* Public Pages */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         
-        {/* User功能 - /app/* 路径 */}
+        {/* User功能 - /app/* 路径（暂时可匿名访问，有使用限制） */}
         <Route path="/app/generate" element={<GeneratePage />} />
         <Route path="/app/narrow-down" element={<NarrowDownPage />} />
         <Route path="/app/records" element={<RecordsPage />} />

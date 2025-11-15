@@ -29,16 +29,16 @@ export interface NarrowDownCallbacks {
 /**
  * 调用 Narrow Down 流程
  */
-export function streamNarrowDown(
+export async function streamNarrowDown(
   userInput: string,
   model: string,
   callbacks: NarrowDownCallbacks
-): () => void {
+): Promise<() => void> {
   console.log('📡 [NarrowDownAPI] 开始 Narrow Down 流程');
   console.log('📝 [NarrowDownAPI] 用户输入长度:', userInput.length);
   console.log('🤖 [NarrowDownAPI] 使用模型:', model);
 
-  const userId = getUserId();
+  const userId = await getUserId();
   console.log('👤 [NarrowDownAPI] User ID:', userId);
 
   fetch('/api/narrow-down/process', {

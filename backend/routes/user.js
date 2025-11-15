@@ -1,5 +1,5 @@
 import express from 'express';
-import { initUser, getUserHistory, getUserStats } from '../controllers/userController.js';
+import { initUser, getUserHistory, getUserStats, migrateAnonymousHistory } from '../controllers/userController.js';
 
 const router = express.Router();
 
@@ -20,6 +20,12 @@ router.get('/history', getUserHistory);
  * 获取用户统计
  */
 router.get('/stats', getUserStats);
+
+/**
+ * POST /api/user/migrate
+ * 迁移匿名历史
+ */
+router.post('/migrate', migrateAnonymousHistory);
 
 export default router;
 
