@@ -91,10 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     console.log('🔍 [AuthContext] Google 登录开始...');
     
+    // 开发环境：localhost:5173
+    // 生产环境：实际域名（window.location.origin 自动适配）
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log('🔗 [AuthContext] Redirect URL:', redirectUrl);
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectUrl,
       },
     });
 
@@ -148,10 +153,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithMagicLink = async (email: string) => {
     console.log('🔗 [AuthContext] Magic Link 发送中:', email);
     
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log('🔗 [AuthContext] Redirect URL:', redirectUrl);
+    
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: redirectUrl,
       },
     });
 
