@@ -9,11 +9,12 @@ import { replacePromptVariables, parallelAPICall } from '../utils/promptUtils.js
 import { OpenRouterClient } from '../openrouter.js';
 
 export class NarrowDownOrchestrator {
-  constructor(db, openrouterClient, userInput, model) {
+  constructor(db, openrouterClient, userInput, model, userId = null) {
     this.db = db;
     this.client = openrouterClient;
     this.userInput = userInput;
     this.model = model;
+    this.userId = userId; // 新增：用户 ID
     
     // 流程数据
     this.names = [];
@@ -148,6 +149,7 @@ export class NarrowDownOrchestrator {
     AuditLog.create(this.db, {
       model: promptModel,
       promptId: promptTemplate.id,
+      userId: this.userId,
       userInput: this.userInput,
       systemPrompt: prompt,
       rawOutput: response,
@@ -205,6 +207,7 @@ export class NarrowDownOrchestrator {
     AuditLog.create(this.db, {
       model: promptModel,
       promptId: isolatePrompt.id,
+      userId: this.userId,
       userInput: this.userInput,
       systemPrompt: prompt,
       rawOutput: response,
@@ -274,6 +277,7 @@ export class NarrowDownOrchestrator {
         AuditLog.create(this.db, {
           model: promptModel,
           promptId: infoPrompt.id,
+          userId: this.userId,
           userInput: `Name: ${candidate.name}`,
           systemPrompt: prompt,
           rawOutput: response,
@@ -344,6 +348,7 @@ export class NarrowDownOrchestrator {
     AuditLog.create(this.db, {
       model: promptModel,
       promptId: decidePrompt.id,
+      userId: this.userId,
       userInput: this.userInput,
       systemPrompt: prompt,
       rawOutput: response,
@@ -416,6 +421,7 @@ export class NarrowDownOrchestrator {
         AuditLog.create(this.db, {
           model: promptModel,
           promptId: storyPrompt.id,
+          userId: this.userId,
           userInput: `Name: ${candidate.name}`,
           systemPrompt: prompt,
           rawOutput: response,

@@ -9,6 +9,7 @@ import promptRoutes from './routes/prompts.js';
 import auditRoutes from './routes/audit.js';
 import narrowDownRoutes from './routes/narrowDown.js';
 import settingsRoutes from './routes/settings.js';
+import userRoutes from './routes/user.js';
 import { getDatabase } from './db/init.js';
 import { Prompt } from './models/Prompt.js';
 import { AuditLog } from './models/AuditLog.js';
@@ -35,6 +36,9 @@ app.use('/api/admin', settingsRoutes);
 // 注册 Narrow Down 路由
 app.use('/api', narrowDownRoutes);
 
+// 注册用户路由
+app.use('/api/user', userRoutes);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'AI Naming Tool API is running' });
@@ -43,8 +47,10 @@ app.get('/api/health', (req, res) => {
 // 流式生成名字端点
 app.post('/api/generate-names', async (req, res) => {
   const { context, model } = req.body;
+  const userId = req.headers['x-user-id'] || 'anonymous';
 
   console.log('\n🎯 ===== 收到新的起名请求 =====');
+  console.log('👤 用户 ID:', userId);
   console.log('📝 用户输入:', context);
   console.log('🤖 使用模型:', model || 'anthropic/claude-3.5-sonnet (默认)');
   console.log('⏰ 请求时间:', new Date().toLocaleString('zh-CN'));
@@ -158,6 +164,7 @@ app.post('/api/generate-names', async (req, res) => {
     const logId = AuditLog.create(db, {
       model: actualModel, // 记录实际使用的模型
       promptId: promptId,
+      userId: userId, // 记录用户 ID
       userInput: context,
       systemPrompt: prompt,
       rawOutput: fullOutput,
@@ -167,6 +174,7 @@ app.post('/api/generate-names', async (req, res) => {
       costUsd: costUsd,
       durationMs: duration,
       success: true,
+      workflowType: 'generation',
     });
     console.log('📝 审计日志已记录到数据库, ID:', logId);
 
@@ -189,12 +197,14 @@ app.post('/api/generate-names', async (req, res) => {
     AuditLog.create(db, {
       model: model || 'anthropic/claude-3.5-sonnet',
       promptId: null,
+      userId: userId, // 记录用户 ID
       userInput: context,
       systemPrompt: prompt || generatePrompt(context),
       rawOutput: fullOutput,
       durationMs: duration,
       success: false,
       error: error.message,
+      workflowType: 'generation',
     });
     
     res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);

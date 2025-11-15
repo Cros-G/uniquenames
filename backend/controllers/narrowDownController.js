@@ -11,8 +11,10 @@ export const narrowDownController = {
    */
   async process(req, res) {
     const { user_input, model } = req.body;
+    const userId = req.headers['x-user-id'] || 'anonymous';
 
     console.log('\n🎯 ===== Narrow Down 请求 =====');
+    console.log('👤 用户 ID:', userId);
     console.log('📝 用户输入:', user_input?.substring(0, 100) + '...');
     console.log('🤖 使用模型:', model || 'anthropic/claude-4.5-sonnet (默认)');
 
@@ -39,7 +41,8 @@ export const narrowDownController = {
         db,
         client,
         user_input,
-        model || 'anthropic/claude-4.5-sonnet'
+        model || 'anthropic/claude-4.5-sonnet',
+        userId // 传递 userId
       );
 
       // 定义进度回调

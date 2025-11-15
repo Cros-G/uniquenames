@@ -1,4 +1,5 @@
 import type { NameCard, PreferredName } from '../types/naming';
+import { getUserId } from '../utils/userAuth';
 
 /**
  * SSE 流式响应回调
@@ -59,11 +60,15 @@ export function streamGenerateNames(
 
   console.log('🌐 [StreamAPI] 准备发送 POST 请求到 /api/generate-names');
 
+  const userId = getUserId();
+  console.log('👤 [StreamAPI] User ID:', userId);
+
   // 创建 POST 请求
   fetch('/api/generate-names', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-User-Id': userId,
     },
     body: JSON.stringify({ context, model }),
   })

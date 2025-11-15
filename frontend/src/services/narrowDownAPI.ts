@@ -5,6 +5,7 @@ import type {
   RankingInfo,
   NameStory,
 } from '../types/narrowDown';
+import { getUserId } from '../utils/userAuth';
 
 /**
  * Narrow Down SSE 回调接口
@@ -37,10 +38,14 @@ export function streamNarrowDown(
   console.log('📝 [NarrowDownAPI] 用户输入长度:', userInput.length);
   console.log('🤖 [NarrowDownAPI] 使用模型:', model);
 
+  const userId = getUserId();
+  console.log('👤 [NarrowDownAPI] User ID:', userId);
+
   fetch('/api/narrow-down/process', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-User-Id': userId,
     },
     body: JSON.stringify({ user_input: userInput, model }),
   })

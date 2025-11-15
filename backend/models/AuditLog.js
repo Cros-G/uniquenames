@@ -9,16 +9,17 @@ export const AuditLog = {
   create(db, data) {
     const stmt = db.prepare(`
       INSERT INTO audit_logs (
-        model, prompt_id, user_input, system_prompt, raw_output,
+        model, prompt_id, user_id, user_input, system_prompt, raw_output,
         tokens_prompt, tokens_completion, tokens_total, cost_usd,
         duration_ms, success, error,
         workflow_type, step_name, names_count
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
       data.model,
       data.promptId || null,
+      data.userId || null,
       data.userInput,
       data.systemPrompt,
       data.rawOutput || null,
