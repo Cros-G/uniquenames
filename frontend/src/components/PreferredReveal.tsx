@@ -7,14 +7,14 @@ interface PreferredRevealProps {
 }
 
 /**
- * AI 推荐名字展示组件
- * 在所有卡片揭示后，显示 AI 的最终推荐
+ * AI Preferred Name Reveal Component
+ * After all cards are revealed, displays AI's final recommendation
  */
 export function PreferredReveal({ preferred }: PreferredRevealProps) {
   return (
     <motion.div
-      className="mt-8 p-6 bg-gradient-to-r from-purple-900/50 to-violet-900/50 
-                 rounded-lg border-2 border-accent"
+      className="mt-8 p-6 bg-gradient-to-r from-pink-50 to-purple-50 
+                 rounded-xl border-2 border-pink-300 shadow-md"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.6, type: 'spring' }}
@@ -27,16 +27,16 @@ export function PreferredReveal({ preferred }: PreferredRevealProps) {
         >
           ⭐
         </motion.div>
-        <h3 className="text-2xl font-bold text-accent">
-          AI 的最终推荐
+        <h3 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+          AI's Final Recommendation
         </h3>
       </div>
       
       <div className="pl-12">
-        <p className="text-3xl font-bold text-text-primary mb-3">
+        <p className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent mb-3">
           {preferred.preferred_name}
         </p>
-        <p className="text-text-secondary leading-relaxed whitespace-pre-wrap">
+        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
           {preferred.preferred_reason}
         </p>
       </div>

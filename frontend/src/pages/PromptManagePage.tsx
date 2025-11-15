@@ -39,19 +39,7 @@ export function PromptManagePage() {
     }
   };
 
-  // 激活提示词
-  const handleActivate = async (id: number, tag: string) => {
-    try {
-      await fetch(`/api/admin/prompts/${id}/activate`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tag }),
-      });
-      loadPrompts();
-    } catch (error) {
-      console.error('激活失败:', error);
-    }
-  };
+  // 移除激活功能（提示词就是仓库，不需要激活）
 
   // 删除提示词
   const handleDelete = async (id: number) => {
@@ -94,7 +82,7 @@ export function PromptManagePage() {
   }, {} as Record<string, Prompt[]>);
 
   return (
-    <div className="flex min-h-screen bg-dark-bg">
+    <div className="flex min-h-screen bg-dark-bg text-white">
       <Sidebar />
       
       <div className="flex-1 overflow-y-auto">
@@ -143,12 +131,7 @@ export function PromptManagePage() {
                     {tagPrompts.map((prompt) => (
                       <motion.div
                         key={prompt.id}
-                        className={`
-                          p-6 rounded-lg border-2 transition-all
-                          ${prompt.is_active 
-                            ? 'border-accent bg-accent/10 shadow-lg shadow-accent/20' 
-                            : 'border-gray-700 bg-card-bg'}
-                        `}
+                        className="p-6 rounded-lg border-2 border-gray-700 bg-card-bg transition-all"
                         whileHover={{ scale: 1.02 }}
                       >
                         <div className="flex items-start justify-between mb-3">
@@ -160,25 +143,10 @@ export function PromptManagePage() {
                               <span className="text-sm text-text-secondary">
                                 v{prompt.version}
                               </span>
-                              {prompt.is_active && (
-                                <span className="px-2 py-0.5 bg-green-600 text-white text-xs rounded-full">
-                                  ✓ 激活中
-                                </span>
-                              )}
                             </div>
                           </div>
                           
                           <div className="flex gap-2">
-                            {!prompt.is_active && (
-                              <button
-                                onClick={() => handleActivate(prompt.id, prompt.tag)}
-                                className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm
-                                         transition-colors"
-                                title="设为激活版本"
-                              >
-                                激活
-                              </button>
-                            )}
                             <button
                               onClick={() => handleEdit(prompt)}
                               className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm
@@ -187,16 +155,14 @@ export function PromptManagePage() {
                             >
                               编辑
                             </button>
-                            {!prompt.is_active && (
-                              <button
-                                onClick={() => handleDelete(prompt.id)}
-                                className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm
-                                         transition-colors"
-                                title="删除"
-                              >
-                                删除
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleDelete(prompt.id)}
+                              className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm
+                                       transition-colors"
+                              title="删除"
+                            >
+                              删除
+                            </button>
                           </div>
                         </div>
                         

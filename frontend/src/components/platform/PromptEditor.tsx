@@ -50,7 +50,7 @@ export function PromptEditor({ isOpen, onClose, prompt, mode, onSave }: PromptEd
         version: '1.0',
         tag: 'generation',
         content: '',
-        default_model: 'anthropic/claude-3.5-sonnet',
+        default_model: 'anthropic/claude-4.5-sonnet',
       });
     }
     setError('');

@@ -7,7 +7,7 @@ interface ErrorDisplayProps {
 }
 
 /**
- * 错误显示组件
+ * Error Display Component
  */
 export function ErrorDisplay({ error, onDismiss }: ErrorDisplayProps) {
   return (
@@ -22,7 +22,7 @@ export function ErrorDisplay({ error, onDismiss }: ErrorDisplayProps) {
           <div className="text-2xl">❌</div>
           <div>
             <h4 className="text-lg font-semibold text-red-300 mb-1">
-              出错了
+              Error
             </h4>
             <p className="text-red-200">{error}</p>
           </div>

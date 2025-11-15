@@ -25,31 +25,31 @@ export function NameCard({
   return (
     <motion.div
       className={`
-        relative p-6 rounded-lg cursor-pointer
+        relative p-6 rounded-xl cursor-pointer
         transition-all duration-300
         ${isPreferred && isRevealed 
-          ? 'border-4 border-accent shadow-lg shadow-accent/50' 
-          : 'border border-gray-700'}
-        ${isRevealed ? 'bg-card-bg' : 'bg-gradient-to-br from-gray-800 to-gray-900'}
+          ? 'border-4 border-pink-400' 
+          : 'border-2 border-gray-200'}
+        ${isRevealed ? 'bg-white shadow-lg' : 'bg-white shadow-md'}
       `}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: 0.5,
-        delay: index * 0.1, // 逐个出现效果
+        delay: index * 0.1,
       }}
       whileHover={isRevealed ? {} : { scale: 1.02 }}
       onClick={isRevealed ? undefined : onClick}
-      style={{
-        backdropFilter: 'blur(10px)',
-      }}
+      style={isPreferred && isRevealed ? {
+        boxShadow: '0 0 30px rgba(236, 72, 153, 0.4)'
+      } : undefined}
     >
       {/* 闪光动画（仅在被选中且揭示时显示） */}
       {isPreferred && isRevealed && (
         <motion.div
-          className="absolute inset-0 rounded-lg opacity-50"
+          className="absolute inset-0 rounded-xl opacity-50"
           style={{
-            background: 'linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.4), transparent)',
+            background: 'linear-gradient(90deg, transparent, rgba(236, 72, 153, 0.4), transparent)',
             backgroundSize: '200% 100%',
           }}
           animate={{
@@ -63,17 +63,22 @@ export function NameCard({
         />
       )}
 
+      {/* 模糊遮罩（未揭示时） */}
+      {!isRevealed && (
+        <div className="absolute inset-0 bg-gray-100/60 rounded-xl" />
+      )}
+
       {/* 卡片内容 */}
       <div
         className={`
           relative z-10 transition-all duration-500
-          ${isRevealed ? '' : 'blur-lg opacity-30 select-none'}
+          ${isRevealed ? '' : 'blur-md opacity-40 select-none'}
         `}
       >
-        <h4 className="text-2xl font-bold text-accent mb-3">
+        <h4 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent mb-3">
           {name}
         </h4>
-        <p className="text-text-secondary leading-relaxed whitespace-pre-wrap">
+        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
           {reason}
         </p>
       </div>
@@ -93,7 +98,7 @@ export function NameCard({
             >
               ✨
             </motion.div>
-            <p className="text-text-secondary text-sm">点击揭示</p>
+            <p className="text-gray-600 text-sm font-medium">点击揭示</p>
           </div>
         </motion.div>
       )}
@@ -101,7 +106,9 @@ export function NameCard({
       {/* AI 之选标记 */}
       {isPreferred && isRevealed && (
         <motion.div
-          className="absolute top-2 right-2 px-3 py-1 bg-accent rounded-full text-sm font-semibold"
+          className="absolute top-2 right-2 px-3 py-1 
+                     bg-gradient-to-r from-pink-500 to-purple-600 
+                     text-white rounded-full text-sm font-semibold shadow-md"
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 15 }}

@@ -14,11 +14,12 @@ export function WindButton({ onClick, disabled = false }: WindButtonProps) {
     <motion.button
       onClick={onClick}
       disabled={disabled}
-      className="px-8 py-4 rounded-full font-semibold text-lg
-                 bg-gradient-to-r from-cyan-500 to-blue-500
-                 hover:from-cyan-600 hover:to-blue-600
+      className="px-8 py-4 rounded-lg font-medium text-lg
+                 bg-gradient-to-r from-pink-500 to-purple-600
+                 hover:from-pink-600 hover:to-purple-700
+                 text-white
                  disabled:opacity-50 disabled:cursor-not-allowed
-                 shadow-lg shadow-cyan-500/50
+                 shadow-md hover:shadow-lg
                  transition-all duration-200"
       whileHover={disabled ? {} : { scale: 1.05 }}
       whileTap={disabled ? {} : { scale: 0.95 }}

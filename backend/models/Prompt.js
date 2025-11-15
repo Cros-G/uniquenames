@@ -17,8 +17,8 @@ export const Prompt = {
       data.version,
       data.tag,
       data.content,
-      data.defaultModel || null,
-      data.isActive ? 1 : 0
+      data.defaultModel || null,  // 接收 camelCase（因为 controller 已转换）
+      data.isActive ? 1 : 0        // 接收 camelCase（因为 controller 已转换）
     );
 
     return result.lastInsertRowid;
@@ -96,13 +96,13 @@ export const Prompt = {
       fields.push('content = ?');
       values.push(data.content);
     }
-    if (data.defaultModel !== undefined) {
+    if (data.default_model !== undefined) {
       fields.push('default_model = ?');
-      values.push(data.defaultModel);
+      values.push(data.default_model);
     }
-    if (data.isActive !== undefined) {
+    if (data.is_active !== undefined) {
       fields.push('is_active = ?');
-      values.push(data.isActive ? 1 : 0);
+      values.push(data.is_active ? 1 : 0);
     }
 
     fields.push('updated_at = CURRENT_TIMESTAMP');

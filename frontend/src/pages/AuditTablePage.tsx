@@ -92,7 +92,7 @@ export function AuditTablePage() {
   const uniqueModels = Array.from(new Set(logs.map(log => log.model)));
 
   return (
-    <div className="flex min-h-screen bg-dark-bg">
+    <div className="flex min-h-screen bg-dark-bg text-white">
       <Sidebar />
       
       <div className="flex-1 overflow-y-auto">

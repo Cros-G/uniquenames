@@ -28,12 +28,12 @@ export function InputPanel({ onSubmit, isLoading }: InputPanelProps) {
 
   return (
     <motion.div
-      className="w-full md:w-1/3 p-6 bg-card-bg rounded-lg shadow-lg"
+      className="w-full md:w-1/3 p-6 bg-white rounded-xl border border-gray-200 shadow-md"
       initial={{ opacity: 0, x: -50 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-2xl font-bold text-accent mb-4">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-4">
         告诉我你的需求
       </h2>
       
@@ -43,19 +43,20 @@ export function InputPanel({ onSubmit, isLoading }: InputPanelProps) {
           onChange={(e) => setContext(e.target.value)}
           disabled={isLoading}
           placeholder="例如：给我的咖啡店起个温暖又有创意的名字..."
-          className="w-full h-64 p-4 bg-dark-bg border border-gray-700 rounded-lg 
-                     text-text-primary placeholder-text-secondary
-                     focus:outline-none focus:ring-2 focus:ring-accent
+          className="w-full h-64 p-4 bg-white border-2 border-gray-200 rounded-lg 
+                     text-gray-900 placeholder-gray-400
+                     focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100
                      disabled:opacity-50 disabled:cursor-not-allowed
-                     resize-none"
+                     resize-none transition-all duration-200"
         />
         
         <motion.button
           type="submit"
           disabled={isLoading || !context.trim()}
-          className="w-full mt-4 py-3 px-6 rounded-lg font-semibold
-                     bg-gradient-to-r from-purple-600 to-violet-600
-                     hover:from-purple-700 hover:to-violet-700
+          className="w-full mt-4 py-3 px-6 rounded-lg font-medium
+                     bg-gradient-to-r from-pink-500 to-purple-600
+                     hover:from-pink-600 hover:to-purple-700
+                     text-white shadow-md hover:shadow-lg
                      disabled:opacity-50 disabled:cursor-not-allowed
                      transition-all duration-200"
           whileHover={{ scale: isLoading ? 1 : 1.02 }}
@@ -65,8 +66,8 @@ export function InputPanel({ onSubmit, isLoading }: InputPanelProps) {
         </motion.button>
       </form>
       
-      <div className="mt-6 text-sm text-text-secondary">
-        <p>💡 提示：</p>
+      <div className="mt-6 text-sm text-gray-600">
+        <p className="font-medium">💡 提示：</p>
         <ul className="list-disc list-inside mt-2 space-y-1">
           <li>描述你的产品、服务或品牌特点</li>
           <li>说明你希望的风格和调性</li>

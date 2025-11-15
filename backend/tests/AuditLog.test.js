@@ -7,9 +7,9 @@ let db;
 
 beforeEach(() => {
   db = getDatabase();
-  // 清空测试数据
-  db.prepare('DELETE FROM audit_logs').run();
-  db.prepare('DELETE FROM prompts').run();
+  // 只清空测试数据（ID > 1000）
+  db.prepare('DELETE FROM audit_logs WHERE id > 1000').run();
+  db.prepare('DELETE FROM prompts WHERE id > 1000').run();
 });
 
 afterEach(() => {

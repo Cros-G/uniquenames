@@ -62,7 +62,7 @@ export const promptController = {
    */
   create(req, res) {
     try {
-      const { name, version, tag, content, defaultModel, isActive } = req.body;
+      const { name, version, tag, content, default_model, is_active } = req.body;
 
       // 验证必填字段
       if (!name || !version || !tag || !content) {
@@ -77,8 +77,8 @@ export const promptController = {
         version,
         tag,
         content,
-        defaultModel,
-        isActive,
+        defaultModel: default_model,
+        isActive: is_active,
       });
 
       res.status(201).json({ id, message: 'Prompt created successfully' });
@@ -153,13 +153,7 @@ export const promptController = {
         return res.status(404).json({ error: 'Prompt not found' });
       }
 
-      // 不允许删除激活的提示词
-      if (prompt.is_active) {
-        return res.status(400).json({ 
-          error: 'Cannot delete active prompt. Please activate another version first.' 
-        });
-      }
-
+      // 允许删除任何提示词（提示词就是仓库，不需要激活限制）
       Prompt.delete(db, id);
       
       res.json({ message: 'Prompt deleted successfully' });

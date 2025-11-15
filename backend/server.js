@@ -7,9 +7,12 @@ import { OpenRouterClient } from './openrouter.js';
 import { generatePrompt } from './prompts/generator.js';
 import promptRoutes from './routes/prompts.js';
 import auditRoutes from './routes/audit.js';
+import narrowDownRoutes from './routes/narrowDown.js';
+import settingsRoutes from './routes/settings.js';
 import { getDatabase } from './db/init.js';
 import { Prompt } from './models/Prompt.js';
 import { AuditLog } from './models/AuditLog.js';
+import { replacePromptVariables } from './utils/promptUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +30,10 @@ app.use(express.json());
 // 注册管理后台路由
 app.use('/api/admin', promptRoutes);
 app.use('/api/admin', auditRoutes);
+app.use('/api/admin', settingsRoutes);
+
+// 注册 Narrow Down 路由
+app.use('/api', narrowDownRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -59,24 +66,34 @@ app.post('/api/generate-names', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     console.log('✅ SSE 连接已建立');
 
-    // 从数据库获取激活的提示词
+    // 从数据库按名称精确查找提示词
     const db = getDatabase();
-    const activePrompt = Prompt.getActive(db, 'generation');
+    const genPrompt = db.prepare(
+      'SELECT * FROM prompts WHERE tag = ? AND name = ? ORDER BY id DESC LIMIT 1'
+    ).get('generation', 'Name Generation Prompt');
     
     let prompt;
     let promptId = null;
     
-    if (activePrompt) {
-      console.log('📝 使用数据库提示词:', activePrompt.name, 'v' + activePrompt.version);
-      // 替换提示词模板中的占位符
-      prompt = activePrompt.content.replace('{{#1761448296889.requirement#}}', context.trim());
-      promptId = activePrompt.id;
+    if (genPrompt) {
+      console.log('📝 使用数据库提示词:', genPrompt.name, 'v' + genPrompt.version);
+      // 使用工具函数替换变量
+      prompt = replacePromptVariables(genPrompt.content, {
+        requirement: context.trim()
+      });
+      promptId = genPrompt.id;
     } else {
-      console.log('⚠️  数据库无激活提示词，使用文件提示词');
+      console.log('⚠️  未找到 Name Generation Prompt，使用文件提示词');
       prompt = generatePrompt(context);
     }
     
     console.log('📄 提示词长度:', prompt.length, '字符');
+
+    // 确定实际使用的模型（优先级：提示词 > 用户选择 > 默认值）
+    const actualModel = genPrompt?.default_model || model || 'anthropic/claude-3.5-sonnet';
+    console.log('🤖 提示词默认模型:', genPrompt?.default_model || '未设置');
+    console.log('🤖 用户选择模型:', model || '未选择');
+    console.log('🎯 实际使用模型:', actualModel);
 
     // 创建 OpenRouter 客户端
     const apiKey = process.env.OPENROUTER_API_KEY;
@@ -86,7 +103,7 @@ app.post('/api/generate-names', async (req, res) => {
     }
     console.log('🔑 API Key:', apiKey.substring(0, 10) + '...' + apiKey.substring(apiKey.length - 4));
 
-    const client = new OpenRouterClient(apiKey, model);
+    const client = new OpenRouterClient(apiKey, actualModel);
     console.log('🤖 OpenRouter 客户端已创建');
     console.log('🚀 开始调用 API，等待响应...\n');
 
@@ -139,7 +156,7 @@ app.post('/api/generate-names', async (req, res) => {
     // 记录审计日志到数据库
     const duration = Date.now() - startTime;
     const logId = AuditLog.create(db, {
-      model: model || 'anthropic/claude-3.5-sonnet',
+      model: actualModel, // 记录实际使用的模型
       promptId: promptId,
       userInput: context,
       systemPrompt: prompt,

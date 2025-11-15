@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 /**
- * 思考状态组件 - 显示 AI 正在思考的动画
+ * Thinking State Component - Shows AI processing animation
  */
 export function ThinkingState({ message }: { message: string }) {
   return (

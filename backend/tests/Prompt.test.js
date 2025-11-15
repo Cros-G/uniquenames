@@ -15,9 +15,9 @@ beforeEach(() => {
   // 创建/获取测试数据库
   db = getDatabase();
   
-  // 清空测试数据（注意顺序：先删除有外键的表）
-  db.prepare('DELETE FROM audit_logs').run();
-  db.prepare('DELETE FROM prompts').run();
+  // 只清空测试数据（ID > 1000 的是测试数据，真实数据ID < 1000）
+  db.prepare('DELETE FROM audit_logs WHERE id > 1000').run();
+  db.prepare('DELETE FROM prompts WHERE id > 1000').run();
 });
 
 afterEach(() => {

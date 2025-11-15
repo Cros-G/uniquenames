@@ -1,0 +1,19 @@
+{
+  "name": "uniquenames_net",
+  "version": "1.0.0",
+  "description": "基于 OpenRouter AI 的智能起名工具，提供沉浸式的名字生成和探索体验。",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently -n \"Backend,Frontend\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "test": "cd backend && npm test",
+    "migrate": "cd backend && node db/migrate.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

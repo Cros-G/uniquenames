@@ -24,8 +24,8 @@ interface OutputPanelProps {
 }
 
 /**
- * 输出面板组件 - 右侧输出区域
- * 整合所有输出相关的组件
+ * Output Panel Component - Right side output area
+ * Integrates all output-related components
  */
 export function OutputPanel({
   phase,
@@ -51,7 +51,7 @@ export function OutputPanel({
       >
         <div className="text-center">
           <div className="text-6xl mb-4">🎨</div>
-          <p className="text-xl">在左侧输入您的需求，开始创作名字</p>
+          <p className="text-xl">Enter your needs on the left to start creating names</p>
         </div>
       </motion.div>
     );
@@ -59,7 +59,7 @@ export function OutputPanel({
 
   return (
     <div className="space-y-6">
-      {/* 错误显示 */}
+      {/* Error Display */}
       {error && (
         <ErrorDisplay 
           error={error} 
@@ -67,34 +67,34 @@ export function OutputPanel({
         />
       )}
 
-      {/* 思考状态 */}
+      {/* Thinking State */}
       {phase === 'analyzing' && !analysis && (
-        <ThinkingState message="正在深入分析您的需求..." />
+        <ThinkingState message="Analyzing your needs in depth..." />
       )}
 
       {phase === 'strategizing' && !strategy && (
-        <ThinkingState message="正在制定命名策略..." />
+        <ThinkingState message="Creating naming strategy..." />
       )}
 
       {phase === 'generating' && (
-        <ThinkingState message="正在创作名字..." />
+        <ThinkingState message="Crafting names..." />
       )}
 
       {phase === 'selecting' && (
-        <ThinkingState message="AI 正在挑选最佳名字..." />
+        <ThinkingState message="AI is selecting the best names..." />
       )}
 
-      {/* 分析结果 */}
+      {/* Analysis Results */}
       <AnalysisSection analysis={analysis} />
 
-      {/* 策略 */}
+      {/* Strategy */}
       <StrategySection strategy={strategy} />
 
-      {/* 名字卡片网格 */}
+      {/* Name Cards Grid */}
       {nameCards.length > 0 && (
         <div>
           <h3 className="text-2xl font-semibold text-accent mb-4">
-            ✨ 名字方案
+            ✨ Name Proposals
           </h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
             {nameCards.map((card, index) => (
@@ -110,7 +110,7 @@ export function OutputPanel({
             ))}
           </div>
 
-          {/* 吹一阵风按钮 */}
+          {/* Wind Button */}
           {hasUnrevealedCards && phase === 'revealing' && (
             <div className="flex justify-center">
               <WindButton onClick={onRevealAll} />
@@ -119,7 +119,7 @@ export function OutputPanel({
         </div>
       )}
 
-      {/* AI 推荐展示 */}
+      {/* AI Recommendation */}
       {allRevealed && preferred && (
         <PreferredReveal preferred={preferred} />
       )}

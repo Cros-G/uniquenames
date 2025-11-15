@@ -11,8 +11,9 @@ export const AuditLog = {
       INSERT INTO audit_logs (
         model, prompt_id, user_input, system_prompt, raw_output,
         tokens_prompt, tokens_completion, tokens_total, cost_usd,
-        duration_ms, success, error
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        duration_ms, success, error,
+        workflow_type, step_name, names_count
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
@@ -27,7 +28,10 @@ export const AuditLog = {
       data.costUsd || null,
       data.durationMs,
       data.success ? 1 : 0,
-      data.error || null
+      data.error || null,
+      data.workflowType || 'generation',
+      data.stepName || null,
+      data.namesCount || null
     );
 
     return result.lastInsertRowid;
@@ -67,6 +71,18 @@ export const AuditLog = {
     if (options.endDate) {
       sql += ' AND timestamp <= ?';
       params.push(options.endDate);
+    }
+
+    // 新增筛选条件：workflow_type
+    if (options.workflowType) {
+      sql += ' AND workflow_type = ?';
+      params.push(options.workflowType);
+    }
+
+    // 新增筛选条件：step_name
+    if (options.stepName) {
+      sql += ' AND step_name = ?';
+      params.push(options.stepName);
     }
 
     // 排序

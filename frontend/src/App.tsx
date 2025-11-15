@@ -1,18 +1,25 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { HomePage } from './pages/HomePage';
+import { LandingPage } from './pages/LandingPage';
+import { GeneratePage } from './pages/GeneratePage';
+import { NarrowDownPage } from './pages/NarrowDownPage';
 import { PromptManagePage } from './pages/PromptManagePage';
 import { AuditTablePage } from './pages/AuditTablePage';
 
 /**
- * 主应用 - 路由配置
+ * Main App - Route Configuration
+ * Note: "/" uses React LandingPage in dev, static HTML in production (via Nginx)
  */
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 前台：用户生成名字 */}
-        <Route path="/" element={<HomePage />} />
+        {/* Landing Page - 开发环境使用 React 版本 */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* User功能 - /app/* 路径 */}
+        <Route path="/app/generate" element={<GeneratePage />} />
+        <Route path="/app/narrow-down" element={<NarrowDownPage />} />
         
         {/* 管理后台 */}
         <Route path="/platform" element={<Navigate to="/platform/prompts" replace />} />

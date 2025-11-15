@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -94,8 +94,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -103,45 +103,45 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 &nbsp;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = <span class="cstat-no" title="statement not covered" >fileURLToPath(import.meta.url);</span>
+const __dirname = <span class="cstat-no" title="statement not covered" >path.dirname(__filename);</span>
 &nbsp;
 /**
  * 生成完整的提示词，注入用户的 context
  * @param {string} userContext - 用户输入的起名需求
  * @returns {string} 完整的提示词
  */
-export function generatePrompt(userContext) {
-  if (!userContext || userContext.trim() === '') {
-    throw new Error('User context is required');
+export function <span class="fstat-no" title="function not covered" >generatePrompt(</span>userContext) {
+<span class="cstat-no" title="statement not covered" >  if (!userContext || userContext.trim() === '') {</span>
+<span class="cstat-no" title="statement not covered" >    throw new Error('User context is required');</span>
   }
 &nbsp;
   // 读取提示词模板
-  const templatePath = path.join(__dirname, '..', '..', 'prompt_generation.xml');
-  const template = fs.readFileSync(templatePath, 'utf-8');
+  const templatePath = <span class="cstat-no" title="statement not covered" >path.join(__dirname, '..', '..', 'prompt_generation.xml');</span>
+  const template = <span class="cstat-no" title="statement not covered" >fs.readFileSync(templatePath, 'utf-8');</span>
 &nbsp;
   // 替换占位符
-  const prompt = template.replace('{{#1761448296889.requirement#}}', userContext.trim());
+  const prompt = <span class="cstat-no" title="statement not covered" >template.replace('{{#1761448296889.requirement#}}', userContext.trim());</span>
 &nbsp;
-  return prompt;
+<span class="cstat-no" title="statement not covered" >  return prompt;</span>
 }
 &nbsp;
 &nbsp;</pre></td></tr></table></pre>
@@ -151,7 +151,7 @@ export function generatePrompt(userContext) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-11T15:52:47.655Z
+                at 2025-11-15T12:43:52.717Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
