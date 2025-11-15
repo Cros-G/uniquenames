@@ -213,7 +213,7 @@ app.post('/api/generate-names', async (req, res) => {
       promptId: null,
       userId: userId,
       userInput: context,
-      systemPrompt: prompt || generatePrompt(context),
+      systemPrompt: generatePrompt(context), // 修复：移除 prompt（此时 prompt 未定义）
       rawOutput: fullOutput,
       durationMs: duration,
       success: false,
