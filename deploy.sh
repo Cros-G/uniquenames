@@ -19,7 +19,15 @@ echo "📥 拉取最新代码..."
 cd $PROJECT_DIR
 git pull
 
-# 2. 备份关键配置（避免被覆盖）
+# 2. 初始化环境特定配置（首次部署）
+echo "🔧 检查环境配置..."
+if [ ! -f "nginx.conf" ] && [ -f "nginx.conf.example" ]; then
+    echo "  → 初始化 nginx.conf（从模板）"
+    cp nginx.conf.example nginx.conf
+    echo "  ⚠️  请根据实际环境修改 nginx.conf！"
+fi
+
+# 3. 备份关键配置（避免被覆盖）
 echo "💾 备份配置文件..."
 if [ -f ".env" ]; then
     cp .env .env.backup
@@ -28,25 +36,25 @@ if [ -f "frontend/.env.local" ]; then
     cp frontend/.env.local frontend/.env.local.backup
 fi
 
-# 3. 安装后端依赖（只安装新的）
+# 4. 安装后端依赖（只安装新的）
 echo "📦 安装后端依赖..."
 cd $BACKEND_DIR
 npm install
 
-# 4. 重新编译 better-sqlite3（关键！）
+# 5. 重新编译 better-sqlite3（关键！）
 echo "🔨 重新编译 better-sqlite3..."
 npm rebuild better-sqlite3
 
-# 5. 安装前端依赖
+# 6. 安装前端依赖
 echo "📦 安装前端依赖..."
 cd $FRONTEND_DIR
 npm install
 
-# 6. 构建前端（生产环境）
+# 7. 构建前端（生产环境）
 echo "🏗️ 构建前端..."
 npm run build
 
-# 7. 恢复配置文件（如果被覆盖）
+# 8. 恢复配置文件（如果被覆盖）
 echo "🔄 恢复配置文件..."
 cd $PROJECT_DIR
 if [ -f ".env.backup" ]; then
@@ -58,16 +66,20 @@ if [ -f "frontend/.env.local.backup" ]; then
     rm frontend/.env.local.backup
 fi
 
-# 8. 重启后端服务
+# 9. 重启后端服务
 echo "🔄 重启后端服务..."
 pm2 restart uniquenames-api || pm2 start $BACKEND_DIR/server.js --name uniquenames-api
 pm2 save
 
-# 9. 重载 Nginx
+# 10. 重载 Nginx（如果 nginx.conf 存在）
 echo "🔄 重载 Nginx..."
-sudo nginx -t && sudo nginx -s reload
+if [ -f "nginx.conf" ]; then
+    sudo nginx -t && sudo nginx -s reload
+else
+    echo "  ⚠️  nginx.conf 不存在，跳过重载"
+fi
 
-# 10. 检查服务状态
+# 11. 检查服务状态
 echo "✅ 检查服务状态..."
 pm2 status
 
