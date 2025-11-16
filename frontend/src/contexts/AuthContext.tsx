@@ -91,15 +91,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     console.log('🔍 [AuthContext] Google 登录开始...');
     
-    // 开发环境：localhost:5173
-    // 生产环境：实际域名（window.location.origin 自动适配）
-    const redirectUrl = `${window.location.origin}/auth/callback`;
-    console.log('🔗 [AuthContext] Redirect URL:', redirectUrl);
-    
+    // 不传 redirectTo，让 Supabase 使用默认配置
+    // 避免 Site URL 验证问题（免费版限制）
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',  // 强制显示隐私条款和权限确认
