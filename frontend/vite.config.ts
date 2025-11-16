@@ -6,6 +6,12 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',  // 允许外部访问
     port: 5173,
+    allowedHosts: [
+      'uniquenames.net',
+      'www.uniquenames.net',
+      'localhost',
+      '.uniquenames.net',  // 允许所有子域名
+    ],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
