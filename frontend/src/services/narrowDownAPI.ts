@@ -99,6 +99,7 @@ export async function streamNarrowDown(
                 case 'analyzing':
                   // 中间状态：显示 analyzing 状态
                   console.log('📊 [NarrowDownAPI] 进入 analyzing 阶段');
+                  callbacks.onTracking?.({ ...parsed, step: 'analyzing' } as any);
                   break;
                 case 'isolate_complete':
                   callbacks.onIsolateComplete?.(parsed);
@@ -106,6 +107,7 @@ export async function streamNarrowDown(
                 case 'researching':
                   // 中间状态：显示 researching 状态
                   console.log('🔬 [NarrowDownAPI] 进入 researching 阶段');
+                  callbacks.onInformationProgress?.({ ...parsed, step: 'researching' } as any);
                   break;
                 case 'information_progress':
                   callbacks.onInformationProgress?.(parsed);
@@ -116,6 +118,7 @@ export async function streamNarrowDown(
                 case 'deciding':
                   // 中间状态：显示 deciding 状态
                   console.log('⚖️ [NarrowDownAPI] 进入 deciding 阶段');
+                  callbacks.onDecideComplete?.({ ...parsed, step: 'deciding' } as any);
                   break;
                 case 'decide_complete':
                   callbacks.onDecideComplete?.(parsed);
@@ -123,6 +126,7 @@ export async function streamNarrowDown(
                 case 'crafting':
                   // 中间状态：显示 crafting 状态
                   console.log('✍️ [NarrowDownAPI] 进入 crafting 阶段');
+                  callbacks.onStoryProgress?.({ ...parsed, step: 'crafting' } as any);
                   break;
                 case 'story_progress':
                   callbacks.onStoryProgress?.(parsed);
