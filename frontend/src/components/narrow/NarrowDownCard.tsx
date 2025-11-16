@@ -115,9 +115,16 @@ export function NarrowDownCard({
 
                 {/* 分析状态或故事 */}
                 {card.currentDimension ? (
-                  <div className="text-sm text-gray-600 italic flex-shrink-0">
+                  <motion.div 
+                    key={card.currentDimension}
+                    className="text-sm text-gray-600 italic flex-shrink-0"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
                     Analyzing {card.currentDimension}...
-                  </div>
+                  </motion.div>
                 ) : card.storyTitle ? (
                   <>
                     {/* 故事标题 - 固定不滚动 */}

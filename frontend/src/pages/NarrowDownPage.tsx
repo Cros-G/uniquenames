@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useNarrowDownStore } from '../store/useNarrowDownStore';
@@ -19,6 +19,58 @@ export function NarrowDownPage() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  
+  // 维度动画定时器映射 (numbering -> timer)
+  const dimensionTimersRef = React.useRef<Map<number, NodeJS.Timeout>>(new Map());
+  
+  // 6个维度按顺序
+  const DIMENSIONS = [
+    'perceptual_fluency',
+    'uniqueness',
+    'longevity_scalability',
+    'conbination_harmony',
+    'ecosystem_portfolio_fit',
+    'cultural_contextual_fit',
+  ];
+  
+  // 启动维度动画
+  const startDimensionAnimation = (numbering: number) => {
+    // 清除旧定时器（如果存在）
+    const oldTimer = dimensionTimersRef.current.get(numbering);
+    if (oldTimer) {
+      clearInterval(oldTimer);
+    }
+    
+    let currentIndex = 0;
+    
+    // 立即显示第一个维度
+    updateCardDimension(numbering, DIMENSIONS[0]);
+    
+    // 每700ms切换到下一个维度
+    const timer = setInterval(() => {
+      currentIndex = (currentIndex + 1) % DIMENSIONS.length;
+      updateCardDimension(numbering, DIMENSIONS[currentIndex]);
+    }, 700);
+    
+    dimensionTimersRef.current.set(numbering, timer);
+  };
+  
+  // 停止维度动画
+  const stopDimensionAnimation = (numbering: number) => {
+    const timer = dimensionTimersRef.current.get(numbering);
+    if (timer) {
+      clearInterval(timer);
+      dimensionTimersRef.current.delete(numbering);
+    }
+  };
+  
+  // 组件卸载时清理所有定时器
+  React.useEffect(() => {
+    return () => {
+      dimensionTimersRef.current.forEach((timer) => clearInterval(timer));
+      dimensionTimersRef.current.clear();
+    };
+  }, []);
   
   const {
     phase,
@@ -112,14 +164,20 @@ export function NarrowDownPage() {
         console.log(`📊 分析进度: ${data.name} - ${data.dimension}`);
         if (data.step === 'researching') {
           setPhase('researching');
+          return;
         }
-        if (data.numbering && data.name && data.dimension) {
-          updateCardDimension(data.numbering, data.dimension);
+        if (data.numbering && data.name) {
+          // 启动维度动画
+          console.log(`🎬 启动维度动画: ${data.name} (${data.numbering})`);
+          startDimensionAnimation(data.numbering);
         }
       },
       
       onInformationComplete: (data) => {
         console.log(`✅ 完成评估: ${data.name}`);
+        // 停止维度动画
+        stopDimensionAnimation(data.numbering);
+        // 更新完整评估
         updateCardEvaluation(data.numbering, data.evaluation);
       },
       
