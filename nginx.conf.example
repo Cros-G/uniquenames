@@ -1,0 +1,170 @@
+# ============================================
+# uniquenames.net - Nginx Configuration
+# 架构：静态 Landing Page + React SPA
+# ============================================
+
+server {
+    listen 80;
+    server_name uniquenames.net www.uniquenames.net;
+    
+    # 服务器根目录（根据实际部署路径修改）
+    root /var/www/uniquenames;
+    
+    # 日志配置
+    access_log /var/log/nginx/uniquenames_access.log;
+    error_log /var/log/nginx/uniquenames_error.log;
+    
+    # Gzip 压缩
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json;
+    
+    # ============================================
+    # 1. 静态 Landing Page - 精确匹配根路径
+    # ============================================
+    location = / {
+        try_files /landing_page/index.html =404;
+        
+        # 缓存控制
+        add_header Cache-Control "public, max-age=3600";
+    }
+    
+    # ============================================
+    # 2. Landing Page 的静态资源（CSS, JS, 图片）
+    # ============================================
+    location /landing_page/ {
+        try_files $uri $uri/ =404;
+        
+        # 静态资源缓存（7天）
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # ============================================
+    # 3. React SPA - /app/* 路径
+    # ============================================
+    location /app/ {
+        # SPA 路由：所有请求返回 React 的 index.html
+        try_files $uri /frontend/dist/index.html;
+        
+        # 禁用缓存（SPA 需要总是获取最新的 index.html）
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires "0";
+    }
+    
+    # ============================================
+    # 4. React SPA 的静态资源（JS, CSS, 图片）
+    # ============================================
+    location /frontend/dist/assets/ {
+        try_files $uri =404;
+        
+        # 静态资源缓存（1年）
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # ============================================
+    # 5. 管理后台 - /platform/*
+    # ============================================
+    location /platform/ {
+        # SPA 路由：所有请求返回 React 的 index.html
+        try_files $uri /frontend/dist/index.html;
+        
+        # 禁用缓存
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+    
+    # ============================================
+    # 6. API 代理 - /api/*
+    # ============================================
+    location /api/ {
+        # 代理到后端 Node.js 服务器（根据实际端口修改）
+        proxy_pass http://localhost:3000;
+        
+        # WebSocket 支持（如需要）
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        
+        # 传递真实 IP
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    
+    # ============================================
+    # 7. 通用静态资源（如果直接在根目录）
+    # ============================================
+    location ~ \.(css|js|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$ {
+        # 优先尝试 landing_page，然后是 frontend/dist
+        try_files /landing_page/$uri /frontend/dist/$uri =404;
+        
+        # 缓存
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+    
+    # ============================================
+    # 8. 其他路径 - 重定向到 Landing Page
+    # ============================================
+    location / {
+        # 重定向到根路径（Landing Page）
+        return 301 /;
+    }
+    
+    # ============================================
+    # 9. 安全配置
+    # ============================================
+    # 隐藏 Nginx 版本
+    server_tokens off;
+    
+    # 防止点击劫持
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    
+    # XSS 保护
+    add_header X-XSS-Protection "1; mode=block" always;
+    
+    # 内容类型嗅探保护
+    add_header X-Content-Type-Options "nosniff" always;
+    
+    # ============================================
+    # 10. 错误页面
+    # ============================================
+    error_page 404 /landing_page/index.html;
+    error_page 500 502 503 504 /50x.html;
+    
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
+
+# ============================================
+# HTTPS 配置（可选 - 生产环境推荐）
+# ============================================
+# server {
+#     listen 443 ssl http2;
+#     server_name uniquenames.net www.uniquenames.net;
+#     
+#     # SSL 证书（使用 Let's Encrypt 或其他证书）
+#     ssl_certificate /etc/letsencrypt/live/uniquenames.net/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/uniquenames.net/privkey.pem;
+#     
+#     # SSL 配置
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     ssl_ciphers HIGH:!aNULL:!MD5;
+#     ssl_prefer_server_ciphers on;
+#     
+#     # ... 其余配置与 HTTP 相同 ...
+# }
+#
+# # HTTP 到 HTTPS 重定向
+# server {
+#     listen 80;
+#     server_name uniquenames.net www.uniquenames.net;
+#     return 301 https://$server_name$request_uri;
+# }
+
