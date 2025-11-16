@@ -100,6 +100,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',  // 强制显示隐私条款和权限确认
+        },
       },
     });
 
@@ -177,14 +181,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     console.log('👋 [AuthContext] 登出开始...');
     
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      console.error('❌ [AuthContext] 登出失败:', error);
-      throw error;
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        // 如果是 session 缺失错误，不抛出异常（正常情况）
+        if (error.message?.includes('Auth session missing')) {
+          console.warn('⚠️ [AuthContext] Session 已过期或不存在，清除本地状态');
+        } else {
+          console.error('❌ [AuthContext] 登出失败:', error);
+          throw error;
+        }
+      }
+      
+      console.log('✅ [AuthContext] 登出成功');
+    } catch (error) {
+      // 任何错误都尝试清除本地状态
+      console.error('❌ [AuthContext] 登出异常:', error);
+      // 不抛出异常，确保用户能登出
     }
     
-    console.log('✅ [AuthContext] 登出成功');
+    // 无论如何，清除本地状态
+    setUser(null);
+    setSession(null);
   };
 
   const value: AuthContextType = {
