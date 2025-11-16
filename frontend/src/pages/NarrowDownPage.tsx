@@ -226,7 +226,7 @@ export function NarrowDownPage() {
           <div className="lg:col-span-4">
             <NarrowDownInput
               onSubmit={handleSubmit}
-              isLoading={phase !== 'idle'}
+              isLoading={phase !== 'idle' && phase !== 'done'}
               showOverLimit={showOverLimit}
               maxNames={maxNames}
               actualCount={actualCount}
