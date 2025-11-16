@@ -32,8 +32,17 @@ echo "💾 备份配置文件..."
 if [ -f ".env" ]; then
     cp .env .env.backup
 fi
+if [ -f "backend/.env" ]; then
+    cp backend/.env backend/.env.backup
+fi
 if [ -f "frontend/.env.local" ]; then
     cp frontend/.env.local frontend/.env.local.backup
+fi
+if [ -f "nginx.conf" ]; then
+    cp nginx.conf nginx.conf.backup
+fi
+if [ -f "frontend/vite.config.ts" ]; then
+    cp frontend/vite.config.ts frontend/vite.config.ts.backup
 fi
 
 # 4. 安装后端依赖（只安装新的）
@@ -61,9 +70,23 @@ if [ -f ".env.backup" ]; then
     cp .env.backup .env
     rm .env.backup
 fi
+if [ -f "backend/.env.backup" ]; then
+    cp backend/.env.backup backend/.env
+    rm backend/.env.backup
+fi
 if [ -f "frontend/.env.local.backup" ]; then
     cp frontend/.env.local.backup frontend/.env.local
     rm frontend/.env.local.backup
+fi
+if [ -f "nginx.conf.backup" ]; then
+    cp nginx.conf.backup nginx.conf
+    rm nginx.conf.backup
+    echo "  ✅ nginx.conf 已恢复"
+fi
+if [ -f "frontend/vite.config.ts.backup" ]; then
+    cp frontend/vite.config.ts.backup frontend/vite.config.ts
+    rm frontend/vite.config.ts.backup
+    echo "  ✅ vite.config.ts 已恢复"
 fi
 
 # 9. 重启后端服务
