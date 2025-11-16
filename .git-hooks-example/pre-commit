@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# ============================================
+# Git Pre-commit Hook
+# 防止提交敏感文件
+# ============================================
+
+echo "🔍 检查敏感文件..."
+
+# 检查是否尝试提交 .env 文件
+if git diff --cached --name-only | grep -E "\.env$|\.env\.local$"; then
+    echo "❌ 错误：检测到 .env 文件！"
+    echo "   不要提交 .env 到 git！"
+    echo "   使用 .env.example 作为模板。"
+    exit 1
+fi
+
+# 检查是否尝试提交 node_modules
+if git diff --cached --name-only | grep "node_modules/"; then
+    echo "❌ 错误：检测到 node_modules 文件！"
+    echo "   不要提交 node_modules 到 git！"
+    echo "   检查 .gitignore 是否正确配置。"
+    exit 1
+fi
+
+# 检查是否尝试提交数据库文件
+if git diff --cached --name-only | grep -E "\.db$"; then
+    echo "⚠️ 警告：检测到数据库文件！"
+    echo "   确认是否真的要提交数据库？"
+    read -p "继续？(y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
+
+echo "✅ 检查通过！"
+exit 0
+
