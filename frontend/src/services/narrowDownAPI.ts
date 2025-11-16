@@ -66,6 +66,9 @@ export async function streamNarrowDown(
 
       console.log('📖 [NarrowDownAPI] 开始读取SSE流...');
 
+      let buffer = ''; // 缓冲区，用于累积不完整的数据
+      let currentEvent = '';
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
@@ -73,16 +76,20 @@ export async function streamNarrowDown(
           break;
         }
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        // 将新数据追加到缓冲区
+        buffer += decoder.decode(value, { stream: true });
 
-        let currentEvent = '';
+        // 按行分割，但保留最后一个不完整的行
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // 最后一行可能不完整，留在缓冲区
 
         for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            currentEvent = line.slice(7).trim();
-          } else if (line.startsWith('data: ')) {
-            const data = line.slice(6);
+          const trimmedLine = line.trim();
+          
+          if (trimmedLine.startsWith('event: ')) {
+            currentEvent = trimmedLine.slice(7).trim();
+          } else if (trimmedLine.startsWith('data: ')) {
+            const data = trimmedLine.slice(6);
 
             try {
               const parsed = JSON.parse(data);
@@ -143,8 +150,8 @@ export async function streamNarrowDown(
 
               currentEvent = ''; // 重置
             } catch (e) {
-              // 忽略解析错误
-              console.warn('⚠️ [NarrowDownAPI] 解析错误:', e);
+              // 忽略解析错误（可能是数据还未完整）
+              console.warn('⚠️ [NarrowDownAPI] 解析错误:', e, '数据:', data);
             }
           }
         }
