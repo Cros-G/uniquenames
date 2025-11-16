@@ -161,13 +161,16 @@ export function NarrowDownPage() {
       },
       
       onInformationProgress: (data) => {
-        console.log(`📊 分析进度: ${data.name} - ${data.dimension}`);
-        if (data.step === 'researching') {
+        console.log(`📊 分析进度:`, data);
+        
+        // 如果是 researching 中间状态（只改变 phase，没有具体名字）
+        if (data.step === 'researching' && !data.numbering) {
           setPhase('researching');
           return;
         }
+        
+        // 如果有具体的名字和编号，启动维度动画
         if (data.numbering && data.name) {
-          // 启动维度动画
           console.log(`🎬 启动维度动画: ${data.name} (${data.numbering})`);
           startDimensionAnimation(data.numbering);
         }
