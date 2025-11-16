@@ -71,7 +71,7 @@ export const useNarrowDownStore = create<NarrowDownStore>((set, get) => ({
       rankingList: rankings,
       // 更新每个卡片的排名信息
       cards: state.cards.map((card) => {
-        const rankingInfo = rankings.find((r) => r.numbering === card.numbering);
+        const rankingInfo = rankings?.find((r) => r.numbering === card.numbering);
         return rankingInfo
           ? {
               ...card,

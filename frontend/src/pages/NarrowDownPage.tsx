@@ -124,12 +124,17 @@ export function NarrowDownPage() {
       },
       
       onDecideComplete: (data) => {
-        console.log('✅ 排名决策完成');
+        console.log('✅ 排名决策完成', data);
         if (data.step === 'deciding') {
           setPhase('deciding');
+          return; // 中间状态，不处理数据
         }
-        setRankingList(data.rankingList);
-        setStrongOpinion(data.strongOpinion);
+        if (data.rankingList) {
+          setRankingList(data.rankingList);
+        }
+        if (data.strongOpinion) {
+          setStrongOpinion(data.strongOpinion);
+        }
         setPhase('crafting');
       },
       
