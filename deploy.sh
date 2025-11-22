@@ -129,7 +129,8 @@ npm run build
 
 # 9. 重启后端服务
 echo "🔄 重启后端服务..."
-pm2 restart uniquenames-api || pm2 start $BACKEND_DIR/server.js --name uniquenames-api
+cd $BACKEND_DIR
+pm2 restart uniquenames-api || pm2 start server.js --name uniquenames-api --cwd $BACKEND_DIR
 pm2 save
 
 # 10. 重载 Nginx（如果 nginx.conf 存在）
