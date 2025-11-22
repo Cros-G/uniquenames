@@ -7,6 +7,9 @@
 echo "🔍 检查 UniqueNames.net 生产环境状态..."
 echo ""
 
+PROJECT_DIR="/root/projects/uniquenames"
+cd "$PROJECT_DIR" || exit 1
+
 # 1. 检查前端构建产物
 echo "📦 [1/5] 前端构建产物"
 if [ -d "frontend/dist" ] && [ -f "frontend/dist/index.html" ]; then
@@ -115,7 +118,34 @@ fi
 
 echo ""
 
-# 5. 环境变量检查
+# 5. 权限检查（新增）
+echo "🔐 [5/6] 权限检查"
+ROOT_PERM=$(stat -c "%a" /root)
+echo "  → /root/ 权限: $ROOT_PERM"
+
+if [ "$ROOT_PERM" = "750" ] || [ "$ROOT_PERM" = "755" ]; then
+    echo "  ✅ /root/ 有 o+x 权限（Nginx 可穿过）"
+else
+    echo "  ❌ /root/ 权限不足（Nginx 无法访问）"
+    echo "  💡 运行: ./setup-production-permissions.sh"
+fi
+
+# 测试 www-data 是否可以读取 index.html
+NGINX_USER=$(ps aux | grep 'nginx: worker process' | grep -v grep | awk '{print $1}' | head -1)
+NGINX_USER=${NGINX_USER:-www-data}
+
+if [ -f "frontend/dist/index.html" ]; then
+    if sudo -u "$NGINX_USER" test -r "frontend/dist/index.html" 2>/dev/null; then
+        echo "  ✅ $NGINX_USER 用户可以读取 index.html"
+    else
+        echo "  ❌ $NGINX_USER 用户无法读取 index.html"
+        echo "  💡 运行: ./setup-production-permissions.sh"
+    fi
+fi
+
+echo ""
+
+# 6. 环境变量检查
 echo "🔐 [5/5] 环境变量"
 if [ -f "backend/.env" ]; then
     echo "  ✅ backend/.env 存在"

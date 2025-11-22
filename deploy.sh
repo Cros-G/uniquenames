@@ -133,7 +133,25 @@ cd $BACKEND_DIR
 pm2 restart uniquenames-api || pm2 start server.js --name uniquenames-api --cwd $BACKEND_DIR
 pm2 save
 
-# 10. 更新 Nginx 配置（生产环境）
+# 10. 设置生产环境权限（如果需要）
+echo "🔐 检查权限配置..."
+if [ -f "$PROJECT_DIR/setup-production-permissions.sh" ]; then
+    # 检查 /root/ 是否有 o+x 权限
+    ROOT_PERM=$(stat -c "%a" /root)
+    if [ "$ROOT_PERM" != "750" ] && [ "$ROOT_PERM" != "755" ]; then
+        echo "  → 需要设置权限（首次部署或权限不足）"
+        chmod +x "$PROJECT_DIR/setup-production-permissions.sh"
+        "$PROJECT_DIR/setup-production-permissions.sh"
+    else
+        echo "  ✅ 权限已正确配置"
+    fi
+else
+    echo "  ⚠️  setup-production-permissions.sh 不存在，跳过"
+fi
+
+echo ""
+
+# 11. 更新 Nginx 配置（生产环境）
 echo "🔄 更新 Nginx 配置..."
 if [ -f "$PROJECT_DIR/nginx.production.conf" ]; then
     echo "  → 检测到生产配置文件"
