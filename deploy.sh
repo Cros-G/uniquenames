@@ -133,12 +133,41 @@ cd $BACKEND_DIR
 pm2 restart uniquenames-api || pm2 start server.js --name uniquenames-api --cwd $BACKEND_DIR
 pm2 save
 
-# 10. 重载 Nginx（如果 nginx.conf 存在）
-echo "🔄 重载 Nginx..."
-if [ -f "$PROJECT_DIR/nginx.conf" ]; then
+# 10. 更新 Nginx 配置（生产环境）
+echo "🔄 更新 Nginx 配置..."
+if [ -f "$PROJECT_DIR/nginx.production.conf" ]; then
+    echo "  → 检测到生产配置文件"
+    
+    # 对比当前配置
+    if ! diff -q "$PROJECT_DIR/nginx.production.conf" /etc/nginx/sites-available/uniquenames.net > /dev/null 2>&1; then
+        echo "  → 配置有更新，正在应用..."
+        
+        # 备份旧配置
+        sudo cp /etc/nginx/sites-available/uniquenames.net /etc/nginx/sites-available/uniquenames.net.backup_$(date +%Y%m%d_%H%M%S)
+        
+        # 应用新配置
+        sudo cp "$PROJECT_DIR/nginx.production.conf" /etc/nginx/sites-available/uniquenames.net
+        
+        # 测试配置
+        if sudo nginx -t; then
+            echo "  ✅ Nginx 配置测试通过"
+            sudo nginx -s reload
+            echo "  ✅ Nginx 已重载"
+        else
+            echo "  ❌ Nginx 配置测试失败，正在回滚..."
+            sudo cp /etc/nginx/sites-available/uniquenames.net.backup_$(date +%Y%m%d_%H%M%S) /etc/nginx/sites-available/uniquenames.net
+            sudo nginx -s reload
+            exit 1
+        fi
+    else
+        echo "  ✅ Nginx 配置无变化，仅重载"
+        sudo nginx -t && sudo nginx -s reload
+    fi
+elif [ -f "$PROJECT_DIR/nginx.conf" ]; then
+    echo "  ⚠️  发现旧配置 nginx.conf，建议使用 nginx.production.conf"
     sudo nginx -t && sudo nginx -s reload
 else
-    echo "  ⚠️  nginx.conf 不存在，跳过重载"
+    echo "  ⚠️  未找到 Nginx 配置文件，跳过"
 fi
 
 # 11. 清理临时备份
